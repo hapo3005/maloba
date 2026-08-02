@@ -6,10 +6,22 @@ const consoleErrors = [];
 const pageErrors = [];
 await mkdir('qa-artifacts', { recursive: true });
 
+async function triggerLazyImages(page) {
+  await page.evaluate(async () => {
+    const step = Math.max(500, Math.floor(window.innerHeight * 0.8));
+    for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise(resolve => setTimeout(resolve, 80));
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForTimeout(1800);
+}
+
 async function inspect(viewport, name) {
   const browser = await chromium.launch({ headless: true });
   try {
-    const page = await browser.newPage({ viewportSize: viewport });
+    const page = await browser.newPage({ viewport });
     page.on('console', message => { if (message.type() === 'error') consoleErrors.push(`[${name}] ${message.text()}`); });
     page.on('pageerror', error => pageErrors.push(`[${name}] ${error.message}`));
 
@@ -20,7 +32,7 @@ async function inspect(viewport, name) {
       const hero = document.querySelector('#hero-master');
       return hero instanceof HTMLImageElement && hero.complete && hero.naturalWidth >= 1400 && hero.naturalHeight >= 700;
     }, null, { timeout: 60_000 });
-    await page.waitForTimeout(2500);
+    await page.waitForTimeout(2000);
 
     if (!(await page.title()).includes('Maloba')) throw new Error(`${name}: falscher Seitentitel`);
     if (!(await page.locator('body').innerText()).includes('Immobilien verdienen mehr als ein Inserat.')) throw new Error(`${name}: freigegebene Headline fehlt`);
@@ -48,11 +60,14 @@ async function inspect(viewport, name) {
 
     if (!(await page.locator('#valuation').evaluate(dialog => dialog.open))) throw new Error(`${name}: Wertermittlungsdialog öffnet nicht`);
     await page.locator('#valuation .dialog-close').click();
+    if (await page.locator('#valuation').evaluate(dialog => dialog.open)) throw new Error(`${name}: Wertermittlungsdialog schließt nicht`);
 
-    const brokenCriticalImages = await page.locator('img').evaluateAll(images => images
-      .filter(image => image.complete && image.naturalWidth === 0 && !image.loading)
+    await triggerLazyImages(page);
+
+    const brokenImages = await page.locator('img').evaluateAll(images => images
+      .filter(image => image.complete && image.naturalWidth === 0)
       .map(image => image.currentSrc || image.src));
-    if (brokenCriticalImages.length) throw new Error(`${name}: defekte kritische Bilder: ${brokenCriticalImages.join(', ')}`);
+    if (brokenImages.length) throw new Error(`${name}: defekte Bilder: ${brokenImages.join(', ')}`);
 
     await page.screenshot({ path: `qa-artifacts/${name}.png`, fullPage: true });
   } finally {
