@@ -1,6 +1,6 @@
-const mobileFix=document.createElement('style');
-mobileFix.textContent='@media(max-width:900px){.mobile-hero-photo{background-position:right center}}@media(max-width:620px){.mobile-hero-photo{height:380px;background-position:right center}.mobile-hero-copy{padding-bottom:40px}.mobile-bar{transform:translateY(100%);transition:transform .22s ease}.mobile-bar.visible{transform:translateY(0)}}';
-document.head.appendChild(mobileFix);
+const productionFix=document.createElement('style');
+productionFix.textContent='.footer-grid img{filter:none;background:#fff;padding:12px;opacity:1}@media(max-width:900px){.mobile-hero-photo{background-position:right center}}@media(max-width:620px){.mobile-hero-photo{height:380px;background-position:right center}.mobile-hero-copy{padding-bottom:40px}.mobile-bar{transform:translateY(100%);transition:transform .22s ease}.mobile-bar.visible{transform:translateY(0)}}';
+document.head.appendChild(productionFix);
 
 const heroAsset='assets/hero-master.webp';
 const heroTarget=document.getElementById('hero-master');
