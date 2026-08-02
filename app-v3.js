@@ -1,5 +1,12 @@
 const heroAsset='assets/hero-master.webp';
 const heroTarget=document.getElementById('hero-master');
+const desktopHero=document.querySelector('.desktop-hero');
+if(desktopHero&&!desktopHero.querySelector('h1')){
+  const headline=document.createElement('h1');
+  headline.textContent='Immobilien verdienen mehr als ein Inserat.';
+  headline.style.cssText='position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+  desktopHero.prepend(headline);
+}
 if(heroTarget){
   heroTarget.src=heroAsset;
   document.documentElement.style.setProperty('--hero-image',`url("${heroAsset}")`);
