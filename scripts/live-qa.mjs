@@ -16,8 +16,11 @@ async function inspect(viewport, name) {
     const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
     if (!response?.ok()) throw new Error(`${name}: HTTP ${response?.status() ?? 'keine Antwort'}`);
 
-    await page.waitForFunction(() => document.body?.dataset.heroReady === 'true', null, { timeout: 60_000 });
-    await page.waitForTimeout(3500);
+    await page.waitForFunction(() => {
+      const hero = document.querySelector('#hero-master');
+      return hero instanceof HTMLImageElement && hero.complete && hero.naturalWidth >= 1400 && hero.naturalHeight >= 700;
+    }, null, { timeout: 60_000 });
+    await page.waitForTimeout(2500);
 
     if (!(await page.title()).includes('Maloba')) throw new Error(`${name}: falscher Seitentitel`);
     if (!(await page.locator('body').innerText()).includes('Immobilien verdienen mehr als ein Inserat.')) throw new Error(`${name}: freigegebene Headline fehlt`);
