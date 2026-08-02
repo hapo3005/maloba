@@ -1,3 +1,4 @@
+(()=>{const l=document.createElement('link');l.rel='stylesheet';l.href='patch.css?v=20260802';document.head.appendChild(l)})();
 (async()=>{const hero=document.querySelector('.hero-img');if(!hero)return;try{const names=Array.from({length:6},(_,i)=>`hero-q40-${String(i).padStart(2,'0')}.txt`);const parts=await Promise.all(names.map(n=>fetch('assets/'+n+'?v=20260802d').then(r=>{if(!r.ok)throw new Error(n);return r.text()})));hero.src='data:image/webp;base64,'+parts.join('')}catch(e){console.warn('High-resolution hero fallback active',e)}})();
 const menu=document.querySelector('.menu'),nav=document.querySelector('#nav');menu?.addEventListener('click',()=>{const o=nav.classList.toggle('open');menu.setAttribute('aria-expanded',o)});nav?.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>nav.classList.remove('open')));
 document.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',()=>document.getElementById(el.dataset.open)?.showModal()));
