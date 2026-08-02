@@ -1,26 +1,11 @@
-async function loadApprovedHero(){
-  const target=document.getElementById('hero-master');
-  if(!target)return;
-  try{
-    const files=Array.from({length:6},(_,i)=>`assets/hero-q40-${String(i).padStart(2,'0')}.txt`);
-    const parts=await Promise.all(files.map(file=>fetch(`${file}?v=3`).then(response=>{if(!response.ok)throw new Error(`${file}: ${response.status}`);return response.text();})));
-    const base64=parts.join('').replace(/\s+/g,'');
-    const binary=atob(base64);
-    const bytes=new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-    const objectUrl=URL.createObjectURL(new Blob([bytes],{type:'image/webp'}));
-    const probe=new Image();
-    await new Promise((resolve,reject)=>{probe.onload=resolve;probe.onerror=reject;probe.src=objectUrl;});
-    if(probe.naturalWidth<1400||probe.naturalHeight<700)throw new Error(`Hero-Auflösung ${probe.naturalWidth}x${probe.naturalHeight} ist zu klein.`);
-    target.src=objectUrl;
-    document.documentElement.style.setProperty('--hero-image',`url("${objectUrl}")`);
-    document.body.dataset.heroReady='true';
-  }catch(error){
-    document.body.dataset.heroReady='fallback';
-    console.error('Freigegebener Hero konnte nicht geladen werden.',error);
-  }
+const heroAsset='assets/hero-master.webp';
+const heroTarget=document.getElementById('hero-master');
+if(heroTarget){
+  heroTarget.src=heroAsset;
+  document.documentElement.style.setProperty('--hero-image',`url("${heroAsset}")`);
+  heroTarget.addEventListener('load',()=>{document.body.dataset.heroReady=heroTarget.naturalWidth>=1400&&heroTarget.naturalHeight>=700?'true':'invalid';},{once:true});
+  heroTarget.addEventListener('error',()=>{document.body.dataset.heroReady='error';console.error('Der freigegebene Hero konnte nicht geladen werden.');},{once:true});
 }
-loadApprovedHero();
 
 const menuButton=document.querySelector('.menu-button');
 const nav=document.querySelector('.main-nav');
