@@ -34,15 +34,6 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
-      - name: Build approved high-resolution hero
-        run: |
-          mkdir -p assets
-          cat assets/hero-q40-00.txt assets/hero-q40-01.txt assets/hero-q40-02.txt assets/hero-q40-03.txt assets/hero-q40-04.txt assets/hero-q40-05.txt \
-            | tr -d '\r\n\t ' \
-            | base64 --decode --ignore-garbage > assets/hero-master.webp
-          test -s assets/hero-master.webp
-          file assets/hero-master.webp
-
       - name: Start pull-request preview
         if: github.event_name == 'pull_request'
         run: python3 -m http.server 4173 > /tmp/maloba-preview.log 2>&1 &
