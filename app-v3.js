@@ -1,4 +1,4 @@
-const heroAsset='assets/hero-approved.jpg';
+const heroAsset='assets/hero-master.webp';
 const heroTarget=document.getElementById('hero-master');
 if(heroTarget){
   heroTarget.src=heroAsset;
