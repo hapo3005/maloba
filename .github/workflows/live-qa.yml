@@ -1,0 +1,59 @@
+name: Live QA
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-live-page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LIVE_URL: https://hapo3005.github.io/maloba/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Wait for GitHub Pages
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error --location "$LIVE_URL" > /dev/null; then
+              exit 0
+            fi
+            echo "Live-Seite noch nicht erreichbar – Versuch $attempt/30"
+            sleep 10
+          done
+          echo "Live-Seite nach fünf Minuten nicht erreichbar."
+          exit 1
+
+      - name: Test desktop and mobile live page
+        run: node scripts/live-qa.mjs
+
+      - name: Upload QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maloba-live-qa-${{ github.run_id }}
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
