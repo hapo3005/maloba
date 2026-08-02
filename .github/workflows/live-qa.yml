@@ -34,6 +34,12 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
+      - name: Build approved high-resolution hero
+        run: |
+          cat assets/hero-final-{00..04}.txt | tr -d '\r\n\t ' | base64 --decode > assets/hero-master.webp
+          test -s assets/hero-master.webp
+          file assets/hero-master.webp
+
       - name: Start pull-request preview
         if: github.event_name == 'pull_request'
         run: python3 -m http.server 4173 > /tmp/maloba-preview.log 2>&1 &
@@ -42,9 +48,7 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             for attempt in {1..30}; do
-              if curl --fail --silent --show-error "$LIVE_URL" > /dev/null; then
-                exit 0
-              fi
+              if curl --fail --silent --show-error "$LIVE_URL" > /dev/null; then exit 0; fi
               echo "Lokale Vorschau noch nicht erreichbar – Versuch $attempt/30"
               sleep 2
             done

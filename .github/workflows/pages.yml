@@ -24,6 +24,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Build approved high-resolution hero
+        run: |
+          cat assets/hero-final-{00..04}.txt | tr -d '\r\n\t ' | base64 --decode > assets/hero-master.webp
+          test -s assets/hero-master.webp
+          file assets/hero-master.webp
+
       - name: Add deployment marker
         run: printf '%s' "$GITHUB_SHA" > build-version.txt
 
