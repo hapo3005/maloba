@@ -10,37 +10,41 @@ await mkdir('qa-artifacts', { recursive: true });
 
 async function inspect(viewport, name) {
   const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewportSize: viewport });
+  try {
+    const page = await browser.newPage({ viewportSize: viewport });
 
-  page.on('console', message => {
-    if (message.type() === 'error') consoleErrors.push(`[${name}] ${message.text()}`);
-  });
-  page.on('pageerror', error => pageErrors.push(`[${name}] ${error.message}`));
+    page.on('console', message => {
+      if (message.type() === 'error') consoleErrors.push(`[${name}] ${message.text()}`);
+    });
+    page.on('pageerror', error => pageErrors.push(`[${name}] ${error.message}`));
 
-  const response = await page.goto(url, { waitUntil: 'networkidle', timeout: 90_000 });
-  if (!response || !response.ok()) {
-    throw new Error(`${name}: Live-Seite antwortet nicht erfolgreich (${response?.status() ?? 'keine Antwort'}).`);
+    const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+    if (!response || !response.ok()) {
+      throw new Error(`${name}: Live-Seite antwortet nicht erfolgreich (${response?.status() ?? 'keine Antwort'}).`);
+    }
+
+    await page.waitForFunction(
+      text => document.body?.innerText.includes(text),
+      requiredText,
+      { timeout: 60_000 },
+    );
+    await page.waitForTimeout(5_000);
+
+    const title = await page.title();
+    if (!title.includes('Maloba')) throw new Error(`${name}: Seitentitel enthält „Maloba“ nicht.`);
+
+    const hero = page.locator('.hero-img, .mobile-hero').first();
+    if (!(await hero.isVisible())) throw new Error(`${name}: Hero ist nicht sichtbar.`);
+
+    const brokenImages = await page.locator('img').evaluateAll(images =>
+      images.filter(image => image.complete && image.naturalWidth === 0).map(image => image.currentSrc || image.src),
+    );
+    if (brokenImages.length) throw new Error(`${name}: Defekte Bilder: ${brokenImages.join(', ')}`);
+
+    await page.screenshot({ path: `qa-artifacts/${name}.png`, fullPage: true });
+  } finally {
+    await browser.close();
   }
-
-  await page.waitForFunction(
-    text => document.body?.innerText.includes(text),
-    requiredText,
-    { timeout: 60_000 },
-  );
-
-  const title = await page.title();
-  if (!title.includes('Maloba')) throw new Error(`${name}: Seitentitel enthält „Maloba“ nicht.`);
-
-  const hero = page.locator('.hero-img, .mobile-hero').first();
-  if (!(await hero.isVisible())) throw new Error(`${name}: Hero ist nicht sichtbar.`);
-
-  const brokenImages = await page.locator('img').evaluateAll(images =>
-    images.filter(image => image.complete && image.naturalWidth === 0).map(image => image.currentSrc || image.src),
-  );
-  if (brokenImages.length) throw new Error(`${name}: Defekte Bilder: ${brokenImages.join(', ')}`);
-
-  await page.screenshot({ path: `qa-artifacts/${name}.png`, fullPage: true });
-  await browser.close();
 }
 
 try {
