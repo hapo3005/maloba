@@ -1,0 +1,2 @@
+ name="Objektart"></div><div class="field full"><label>Kurzbeschreibung</label><textarea name="Beschreibung"></textarea></div></div><p class="form-note">Beim Absenden öffnet sich Ihr E-Mail-Programm. Es werden hier keine Daten gespeichert.</p><button class="button primary" type="submit">Kontakt vorbereiten</button></form></dialog>
+<script src="site.js" defer></script></body></html>
