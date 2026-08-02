@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      LIVE_URL: https://hapo3005.github.io/maloba/
+      LIVE_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:4173' || 'https://hapo3005.github.io/maloba/' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,19 +34,41 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
-      - name: Wait for GitHub Pages
-        run: |
-          for attempt in {1..30}; do
-            if curl --fail --silent --show-error --location "$LIVE_URL" > /dev/null; then
-              exit 0
-            fi
-            echo "Live-Seite noch nicht erreichbar – Versuch $attempt/30"
-            sleep 10
-          done
-          echo "Live-Seite nach fünf Minuten nicht erreichbar."
-          exit 1
+      - name: Start pull-request preview
+        if: github.event_name == 'pull_request'
+        run: python3 -m http.server 4173 > /tmp/maloba-preview.log 2>&1 &
 
-      - name: Test desktop and mobile live page
+      - name: Wait for tested version
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            for attempt in {1..30}; do
+              if curl --fail --silent --show-error "$LIVE_URL" > /dev/null; then
+                exit 0
+              fi
+              echo "Lokale Vorschau noch nicht erreichbar – Versuch $attempt/30"
+              sleep 2
+            done
+            cat /tmp/maloba-preview.log || true
+            exit 1
+          fi
+
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            for attempt in {1..60}; do
+              deployed_sha="$(curl --fail --silent --location "${LIVE_URL}build-version.txt?attempt=${attempt}" || true)"
+              if [ "$deployed_sha" = "$GITHUB_SHA" ]; then
+                echo "Deployment $GITHUB_SHA ist live."
+                exit 0
+              fi
+              echo "Warte auf Deployment $GITHUB_SHA – aktuell: ${deployed_sha:-nicht verfügbar}"
+              sleep 10
+            done
+            echo "Der erwartete Commit wurde nicht innerhalb von zehn Minuten veröffentlicht."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error --location "$LIVE_URL" > /dev/null
+
+      - name: Test desktop and mobile page
         run: node scripts/live-qa.mjs
 
       - name: Upload QA screenshots
