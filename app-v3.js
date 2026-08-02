@@ -1,5 +1,5 @@
 const mobileFix=document.createElement('style');
-mobileFix.textContent='@media(max-width:900px){.mobile-hero-photo{background-position:right center}}@media(max-width:620px){.mobile-hero-photo{height:380px;background-position:right center}.mobile-hero-copy{padding-bottom:86px}}';
+mobileFix.textContent='@media(max-width:900px){.mobile-hero-photo{background-position:right center}}@media(max-width:620px){.mobile-hero-photo{height:380px;background-position:right center}.mobile-hero-copy{padding-bottom:40px}.mobile-bar{transform:translateY(100%);transition:transform .22s ease}.mobile-bar.visible{transform:translateY(0)}}';
 document.head.appendChild(mobileFix);
 
 const heroAsset='assets/hero-master.webp';
@@ -26,6 +26,11 @@ nav?.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{nav.
 document.querySelectorAll('[data-dialog]').forEach(button=>button.addEventListener('click',()=>document.getElementById(button.dataset.dialog)?.showModal()));
 document.querySelectorAll('.dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close()}));
 document.querySelectorAll('.dialog-close').forEach(button=>{button.type='button';button.addEventListener('click',()=>button.closest('dialog')?.close())});
+
+const mobileBar=document.querySelector('.mobile-bar');
+const updateMobileBar=()=>mobileBar?.classList.toggle('visible',window.scrollY>560);
+window.addEventListener('scroll',updateMobileBar,{passive:true});
+updateMobileBar();
 
 function bindToggle(buttonId,gridId,openLabel,closedLabel){const button=document.getElementById(buttonId);const grid=document.getElementById(gridId);button?.addEventListener('click',()=>{const expanded=grid.classList.toggle('show-all');button.setAttribute('aria-expanded',String(expanded));button.textContent=expanded?closedLabel:openLabel});}
 bindToggle('toggle-stories','story-grid','Alle 16 Erfolgsgeschichten anzeigen','Weniger Erfolgsgeschichten anzeigen');
