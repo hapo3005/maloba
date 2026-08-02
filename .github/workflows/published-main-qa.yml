@@ -1,0 +1,60 @@
+name: Published Main QA
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: published-main-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-published-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LIVE_URL: https://hapo3005.github.io/maloba/
+      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Wait for exact published main commit
+        run: |
+          for attempt in {1..60}; do
+            deployed_sha="$(curl --fail --silent --location "${LIVE_URL}build-version.txt?attempt=${attempt}" || true)"
+            if [ "$deployed_sha" = "$EXPECTED_SHA" ]; then
+              echo "Der erwartete Main-Commit $EXPECTED_SHA ist veröffentlicht."
+              exit 0
+            fi
+            echo "Warte auf $EXPECTED_SHA – veröffentlicht: ${deployed_sha:-nicht verfügbar}"
+            sleep 10
+          done
+          echo "Der erwartete Main-Commit wurde nicht innerhalb von zehn Minuten veröffentlicht."
+          exit 1
+
+      - name: Test published desktop and mobile page
+        run: node scripts/live-qa.mjs
+
+      - name: Upload published QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maloba-published-main-qa-${{ github.run_id }}
+          path: qa-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
