@@ -14,6 +14,7 @@ async function triggerLazyImages(page) {
       await new Promise(resolve => setTimeout(resolve, 80));
     }
     window.scrollTo(0, 0);
+    window.dispatchEvent(new Event('scroll'));
   });
   await page.waitForTimeout(1800);
 }
@@ -44,6 +45,8 @@ async function inspect(viewport, name) {
     if (searchCount !== 11) throw new Error(`${name}: ${searchCount} statt 11 Suchaufträge`);
     if (dialogCount !== 3) throw new Error(`${name}: ${dialogCount} statt 3 Dialoge`);
 
+    await page.screenshot({ path: `qa-artifacts/${name}-initial.png`, fullPage: false });
+
     if (viewport.width >= 901) {
       const hero = page.locator('#hero-master');
       if (!(await hero.isVisible())) throw new Error(`${name}: Desktop-Hero nicht sichtbar`);
@@ -55,6 +58,19 @@ async function inspect(viewport, name) {
       await page.locator('.menu-button').click();
       if (!(await page.locator('.main-nav').isVisible())) throw new Error(`${name}: Mobilmenü öffnet nicht`);
       await page.locator('.menu-button').click();
+
+      const mobileBar = page.locator('.mobile-bar');
+      if (await mobileBar.evaluate(element => element.classList.contains('visible'))) throw new Error(`${name}: Schnellkontakt überdeckt den initialen Hero`);
+      const barBoxAtTop = await mobileBar.boundingBox();
+      if (barBoxAtTop && barBoxAtTop.y < viewport.height) throw new Error(`${name}: versteckter Schnellkontakt liegt im sichtbaren Bereich`);
+
+      await page.evaluate(() => window.scrollTo(0, 700));
+      await page.waitForTimeout(300);
+      if (!(await mobileBar.evaluate(element => element.classList.contains('visible')))) throw new Error(`${name}: Schnellkontakt erscheint beim Scrollen nicht`);
+      await page.evaluate(() => { window.scrollTo(0, 0); window.dispatchEvent(new Event('scroll')); });
+      await page.waitForTimeout(300);
+      if (await mobileBar.evaluate(element => element.classList.contains('visible'))) throw new Error(`${name}: Schnellkontakt verschwindet am Seitenanfang nicht`);
+
       await page.locator('.mobile-hero [data-dialog="valuation"]').click();
     }
 
@@ -69,7 +85,10 @@ async function inspect(viewport, name) {
       .map(image => image.currentSrc || image.src));
     if (brokenImages.length) throw new Error(`${name}: defekte Bilder: ${brokenImages.join(', ')}`);
 
-    await page.screenshot({ path: `qa-artifacts/${name}.png`, fullPage: true });
+    await page.addStyleTag({ content: '.mobile-bar{display:none!important}' });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: `qa-artifacts/${name}-full.png`, fullPage: true });
   } finally {
     await browser.close();
   }
