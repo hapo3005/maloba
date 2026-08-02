@@ -1,0 +1,2 @@
+.navlinks{gap:28px;font-size:1rem}.navlinks a{white-space:nowrap}
+@media(max-width:580px){.mobile-hero{position:relative;min-height:auto;padding:48px 24px 0;overflow:hidden}.mobile-hero h1{font-size:3.15rem;max-width:340px}.mobile-hero .lead{max-width:330px}.mobile-hero .actions{position:relative;z-index:2;max-width:330px}.mobile-hero .mobile-person{position:static;display:block;width:84%;height:auto;max-height:390px;object-fit:contain;object-position:center bottom;margin:24px auto 0;opacity:1}}
