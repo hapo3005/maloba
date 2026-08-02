@@ -39,7 +39,7 @@ jobs:
           mkdir -p assets
           cat assets/hero-q40-00.txt assets/hero-q40-01.txt assets/hero-q40-02.txt assets/hero-q40-03.txt assets/hero-q40-04.txt assets/hero-q40-05.txt \
             | tr -d '\r\n\t ' \
-            | base64 --decode > assets/hero-master.webp
+            | base64 --decode --ignore-garbage > assets/hero-master.webp
           test -s assets/hero-master.webp
           file assets/hero-master.webp
 
@@ -51,9 +51,7 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             for attempt in {1..30}; do
-              if curl --fail --silent --show-error "$LIVE_URL" > /dev/null; then
-                exit 0
-              fi
+              if curl --fail --silent --show-error "$LIVE_URL" > /dev/null; then exit 0; fi
               echo "Lokale Vorschau noch nicht erreichbar – Versuch $attempt/30"
               sleep 2
             done
